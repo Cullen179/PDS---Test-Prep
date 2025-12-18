@@ -11,9 +11,11 @@
 7. [Data Visualization](#7-data-visualization)
 8. [Train-Test Split](#8-train-test-split)
 9. [Classification Models](#9-classification-models)
-10. [Model Evaluation](#10-model-evaluation)
-11. [Hyperparameter Tuning](#11-hyperparameter-tuning)
-12. [Handling Imbalanced Data](#12-handling-imbalanced-data)
+10. [Classification Model Evaluation](#10-classification-model-evaluation)
+11. [Regression Models](#11-regression-models)
+12. [Regression Model Evaluation](#12-regression-model-evaluation)
+13. [Hyperparameter Tuning](#13-hyperparameter-tuning)
+14. [Handling Imbalanced Data](#14-handling-imbalanced-data)
 
 ---
 
@@ -468,7 +470,7 @@ y_pred_rf = rf.predict(X_test)
 
 ---
 
-## 10. Model Evaluation
+## 10. Classification Model Evaluation
 
 ### Classification Report
 
@@ -533,7 +535,257 @@ cv_scores = cross_val_score(model, X, y, cv=skf, scoring='accuracy')
 
 ---
 
-## 11. Hyperparameter Tuning
+## 11. Regression Models
+
+### Linear Regression
+
+```python
+from sklearn.linear_model import LinearRegression
+
+lr = LinearRegression()
+lr.fit(X_train, y_train)
+y_pred_lr = lr.predict(X_test)
+
+# Coefficients
+print(f"Intercept: {lr.intercept_}")
+print(f"Coefficients: {lr.coef_}")
+```
+
+### Ridge Regression (L2 Regularization)
+
+```python
+from sklearn.linear_model import Ridge
+
+ridge = Ridge(alpha=1.0)
+ridge.fit(X_train, y_train)
+y_pred_ridge = ridge.predict(X_test)
+```
+
+### Lasso Regression (L1 Regularization)
+
+```python
+from sklearn.linear_model import Lasso
+
+lasso = Lasso(alpha=0.1)
+lasso.fit(X_train, y_train)
+y_pred_lasso = lasso.predict(X_test)
+
+# Feature selection (coefficients = 0 are removed)
+print(f"Non-zero coefficients: {np.sum(lasso.coef_ != 0)}")
+```
+
+### ElasticNet (L1 + L2)
+
+```python
+from sklearn.linear_model import ElasticNet
+
+elastic = ElasticNet(alpha=0.1, l1_ratio=0.5)
+elastic.fit(X_train, y_train)
+y_pred_elastic = elastic.predict(X_test)
+```
+
+### Decision Tree Regressor
+
+```python
+from sklearn.tree import DecisionTreeRegressor
+
+dt_reg = DecisionTreeRegressor(random_state=42, max_depth=5)
+dt_reg.fit(X_train, y_train)
+y_pred_dt = dt_reg.predict(X_test)
+```
+
+### Random Forest Regressor
+
+```python
+from sklearn.ensemble import RandomForestRegressor
+
+rf_reg = RandomForestRegressor(n_estimators=100, random_state=42)
+rf_reg.fit(X_train, y_train)
+y_pred_rf = rf_reg.predict(X_test)
+
+# Feature importance
+feature_importance = pd.DataFrame({
+    'feature': X.columns,
+    'importance': rf_reg.feature_importances_
+}).sort_values('importance', ascending=False)
+print(feature_importance)
+```
+
+### K-Nearest Neighbors Regressor
+
+```python
+from sklearn.neighbors import KNeighborsRegressor
+
+knn_reg = KNeighborsRegressor(n_neighbors=5)
+knn_reg.fit(X_train, y_train)
+y_pred_knn = knn_reg.predict(X_test)
+```
+
+### Support Vector Regressor
+
+```python
+from sklearn.svm import SVR
+
+svr = SVR(kernel='rbf', C=1.0)
+svr.fit(X_train, y_train)
+y_pred_svr = svr.predict(X_test)
+```
+
+---
+
+## 12. Regression Model Evaluation
+
+### Import Regression Metrics
+
+```python
+from sklearn.metrics import (
+    mean_squared_error, mean_absolute_error,
+    r2_score, mean_absolute_percentage_error
+)
+```
+
+### Calculate All Metrics
+
+```python
+def evaluate_regression(y_test, y_pred, model_name="Model"):
+    """Evaluate regression model with multiple metrics"""
+    mse = mean_squared_error(y_test, y_pred)
+    rmse = np.sqrt(mse)
+    mae = mean_absolute_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
+    mape = mean_absolute_percentage_error(y_test, y_pred) * 100
+    
+    print(f"=== {model_name} ===")
+    print(f"MSE:  {mse:.4f}")
+    print(f"RMSE: {rmse:.4f}")
+    print(f"MAE:  {mae:.4f}")
+    print(f"R²:   {r2:.4f}")
+    print(f"MAPE: {mape:.2f}%")
+    print()
+    
+    return {'mse': mse, 'rmse': rmse, 'mae': mae, 'r2': r2, 'mape': mape}
+
+# Usage
+evaluate_regression(y_test, y_pred, "Linear Regression")
+```
+
+### Individual Metrics
+
+```python
+# Mean Squared Error (MSE)
+mse = mean_squared_error(y_test, y_pred)
+print(f"MSE: {mse:.4f}")
+
+# Root Mean Squared Error (RMSE)
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+print(f"RMSE: {rmse:.4f}")
+
+# Mean Absolute Error (MAE)
+mae = mean_absolute_error(y_test, y_pred)
+print(f"MAE: {mae:.4f}")
+
+# R² Score (Coefficient of Determination)
+r2 = r2_score(y_test, y_pred)
+print(f"R² Score: {r2:.4f}")
+
+# Mean Absolute Percentage Error (MAPE)
+mape = mean_absolute_percentage_error(y_test, y_pred) * 100
+print(f"MAPE: {mape:.2f}%")
+```
+
+### Residual Analysis
+
+```python
+# Calculate residuals
+residuals = y_test - y_pred
+
+# Residual plot
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Residuals vs Predicted
+axes[0].scatter(y_pred, residuals, alpha=0.5)
+axes[0].axhline(y=0, color='r', linestyle='--')
+axes[0].set_xlabel('Predicted Values')
+axes[0].set_ylabel('Residuals')
+axes[0].set_title('Residuals vs Predicted')
+
+# Residual distribution
+axes[1].hist(residuals, bins=30, edgecolor='black')
+axes[1].set_xlabel('Residuals')
+axes[1].set_ylabel('Frequency')
+axes[1].set_title('Residual Distribution')
+
+plt.tight_layout()
+plt.show()
+```
+
+### Actual vs Predicted Plot
+
+```python
+plt.figure(figsize=(8, 6))
+plt.scatter(y_test, y_pred, alpha=0.5)
+plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--', lw=2)
+plt.xlabel('Actual Values')
+plt.ylabel('Predicted Values')
+plt.title('Actual vs Predicted')
+plt.tight_layout()
+plt.show()
+```
+
+### Cross-Validation for Regression
+
+```python
+from sklearn.model_selection import cross_val_score, KFold
+
+# K-Fold Cross Validation
+kf = KFold(n_splits=5, shuffle=True, random_state=42)
+
+# Scoring options: 'neg_mean_squared_error', 'neg_mean_absolute_error', 'r2'
+cv_scores = cross_val_score(model, X, y, cv=kf, scoring='neg_mean_squared_error')
+rmse_scores = np.sqrt(-cv_scores)
+
+print(f"CV RMSE Scores: {rmse_scores}")
+print(f"Mean RMSE: {rmse_scores.mean():.4f} (+/- {rmse_scores.std() * 2:.4f})")
+
+# R² Cross-Validation
+cv_r2 = cross_val_score(model, X, y, cv=kf, scoring='r2')
+print(f"CV R² Scores: {cv_r2}")
+print(f"Mean R²: {cv_r2.mean():.4f} (+/- {cv_r2.std() * 2:.4f})")
+```
+
+### Compare Multiple Models
+
+```python
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
+
+models = {
+    'Linear Regression': LinearRegression(),
+    'Ridge': Ridge(alpha=1.0),
+    'Lasso': Lasso(alpha=0.1),
+    'Decision Tree': DecisionTreeRegressor(max_depth=5, random_state=42),
+    'Random Forest': RandomForestRegressor(n_estimators=100, random_state=42)
+}
+
+results = []
+for name, model in models.items():
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    results.append({
+        'Model': name,
+        'RMSE': np.sqrt(mean_squared_error(y_test, y_pred)),
+        'MAE': mean_absolute_error(y_test, y_pred),
+        'R²': r2_score(y_test, y_pred)
+    })
+
+results_df = pd.DataFrame(results).sort_values('R²', ascending=False)
+display(results_df)
+```
+
+---
+
+## 13. Hyperparameter Tuning
 
 ### Grid Search CV
 
@@ -580,9 +832,37 @@ plt.show()
 print(f"Best K: {k_range[np.argmax(scores)]}, Accuracy: {max(scores):.4f}")
 ```
 
+### Grid Search for Regression Models
+
+```python
+# Ridge Regression
+from sklearn.linear_model import Ridge
+
+param_grid_ridge = {
+    'alpha': [0.01, 0.1, 1, 10, 100]
+}
+grid_ridge = GridSearchCV(Ridge(), param_grid_ridge, cv=5, scoring='neg_mean_squared_error')
+grid_ridge.fit(X_train, y_train)
+print(f"Best alpha: {grid_ridge.best_params_}")
+print(f"Best RMSE: {np.sqrt(-grid_ridge.best_score_):.4f}")
+
+# Random Forest Regressor
+from sklearn.ensemble import RandomForestRegressor
+
+param_grid_rf = {
+    'n_estimators': [50, 100, 200],
+    'max_depth': [3, 5, 10, None],
+    'min_samples_split': [2, 5, 10]
+}
+grid_rf = GridSearchCV(RandomForestRegressor(random_state=42), param_grid_rf, cv=5, scoring='r2')
+grid_rf.fit(X_train, y_train)
+print(f"Best params: {grid_rf.best_params_}")
+print(f"Best R²: {grid_rf.best_score_:.4f}")
+```
+
 ---
 
-## 12. Handling Imbalanced Data
+## 14. Handling Imbalanced Data
 
 ### Check Class Balance
 
@@ -612,6 +892,8 @@ lr.fit(X_train, y_train)
 
 ## Quick Reference - Metrics Interpretation
 
+### Classification Metrics
+
 | Metric        | Use When                                                  |
 | ------------- | --------------------------------------------------------- |
 | **Accuracy**  | Balanced classes                                          |
@@ -619,6 +901,16 @@ lr.fit(X_train, y_train)
 | **Recall**    | False negatives are costly (e.g., disease detection)      |
 | **F1-Score**  | Imbalanced classes, need balance between precision/recall |
 | **ROC-AUC**   | Compare models, threshold-independent evaluation          |
+
+### Regression Metrics
+
+| Metric   | Description                              | Interpretation                        |
+| -------- | ---------------------------------------- | ------------------------------------- |
+| **MSE**  | Mean Squared Error                       | Lower is better, penalizes large errors |
+| **RMSE** | Root Mean Squared Error                  | Same unit as target, lower is better  |
+| **MAE**  | Mean Absolute Error                      | Robust to outliers, lower is better   |
+| **R²**   | Coefficient of Determination             | 0-1 range, closer to 1 is better      |
+| **MAPE** | Mean Absolute Percentage Error           | Percentage error, lower is better     |
 
 ---
 

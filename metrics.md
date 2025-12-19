@@ -33,6 +33,47 @@
 - Imbalanced + care about positive detection quality → **F1 (or Precision/Recall)**
 - Need good ranking / will pick threshold later → **ROC-AUC** (plus PR-AUC if very imbalanced)
 
+`
+### Conclusion and understanding of models results
+
+A campaign that the bank ran last year for liability customers showed a healthy conversion rate of over 9% success. 
+
+Most of the ML models works best when the number of classes are in equal proportion since they are designed to maximize accuracy and reduce error. Thus, they do not take into account the class distribution / proportion or balance of classes. In our dataset, the percentage of customer accepting the bank loan offered in campaign (class 1) is 9.6% whereas 90.4% of customers didn't accept the loan offered (class 0).
+
+The confusion matrix is another metric that is often used to measure the performance of a classification algorithm, which contains information about the actual and the predicted class.
+
+Metrics that can be calculated from confusion matrix:
+* **Precision**: When it predicts the positive result, how often is it correct? i.e. limit the number of false positives.
+* **Recall**: When it is actually the positive result, how often does it predict correctly? i.e. limit the number of false negatives.
+* **f1-score**: Harmonic mean of precision and recall.
+
+The confusion matrix for class 1 (Accepted) would look like:
+
+|                        | Predicted: 0 (Not Accepted) | Predicted: 1 (Accepted)|
+|------------------------|-----------------------------|------------------------|
+|**Actual: 0 (Not Accepted)**| True Negatives              | False Positives        |
+|**Actual: 1 (Accepted)**    | False Negatives             | True Positives         |
+
+* **Precision would tell us cases where actually the personal loan wasn't accepted by the customer but we predicted it as accepted.**
+* **Recall would tell us cases where actually the personal was accepted by the customer but we predicted it as not accepted.**
+
+In our case, it would be recall that would hold more importance then precision. So choosing recall and f1-score which is the harmonic mean of both precision and recall as evaluation metric, particularly for class 1.
+
+Further, AUC-ROC curve is a performance measurement for classification problem at various thresholds settings. ROC is a probability curve and AUC represents degree or measure of separability. It tells how much model is capable of distinguishing between classes. Higher the AUC, better the model is at predicting 0s as 0s and 1s as 1s. By analogy, higher the AUC, better the model is at distinguishing between people accepting the loan and people not accepting the loan offered by the bank [source](https://towardsdatascience.com/understanding-auc-roc-curve-68b2303cc9c5).
+Thus based on our evaluation metric, the scores of the models we tried are as below:
+
+| Models      | Recall Score for Class 1 (%) | f1-score for Class 1 (%) | ROC AUC (%) | Accuracy (%) |
+|-------------|--------------------------|----------------------|-----|----|
+| **1. Logistic Regression** | 52 | 62 | 75 | 93.9 |
+| **2. Logistic Regression with Hyperparameter Tuning** | 54 | 65 | 76 | 94.3 |
+| **3. Logistic Regression with Hyperparameter Tuning and Oversampling** | 89 | 60 | 89 | 88.5 |
+| **4. k-Nearest Neighbor** | 34 | 43 | 66 | 91 |
+| **5. k-Nearest Neighbor with Hyperparameter Tuning** | 26 | 36 | 62 | 90.9 |
+| **6. k-Nearest Neighbor with Hyperparameter Tuning and Oversampling** | 56 | 49 | 74 | 88.4 |
+
+It can be seen that **Model 3** gives a better measures overall against others. 
+`
+
 ### RMSE (Root Mean Squared Error)
 
 - **What it measures:** typical error size, but **punishes big mistakes**.
@@ -87,4 +128,28 @@
     - The problem may be noisy / missing key predictors.
     - Add strong predictors, interactions, or a more flexible model.
     - Re-check data quality and leakage.
-    
+
+### Generalization (train vs test)
+
+- **R² (Train) = 0.876**, **R² (Test) = 0.824**
+    - The drop (**0.052**) is small → the model generalizes reasonably well (not heavily overfitting).
+    - **Test R² = 0.824** means the model explains about **82% of the variation** in test scores.
+
+### Error size (in “score points”)
+
+- **MAE = 0.919** → typical prediction is off by about **0.9 points**.
+- **RMSE = 1.446** → errors are about **1.45 points** on average, with **extra penalty for larger misses**.
+- Because **RMSE > MAE**, you likely have a few larger errors (outliers) raising RMSE.
+
+### Plots
+
+- **Predicted vs Actual:** most points lie close to the diagonal → predictions track actual scores well. A few points far from the line indicate cases the model struggles with (especially at the low-score end).
+- **Residuals distribution:** centered near **0** (good, low bias) but with a **left tail** (some large negative residuals) → a few cases where the model under/over-predicts by a lot.
+
+## Which metric to focus on for school test score prediction
+
+- **Primary: MAE** (most interpretable)
+    - “On average, we’re off by ~0.9 marks.” This is easy to explain to teachers/stakeholders.
+- **Also report: RMSE** if **large mistakes matter more**
+    - Useful if being wrong by 4–5 marks is much worse than being wrong by 1 mark.
+- **Secondary: R²** for context (how much variance you capture), but don’t rely on it alone because it’s not in score units.
